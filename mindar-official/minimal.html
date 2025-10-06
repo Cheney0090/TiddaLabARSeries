@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>MindAR — Official Minimal + Video</title>
+    <!-- Official libraries only (from docs) -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  </head>
+  <body>
+    <!--
+      Put your compiled targets.mind NEXT TO THIS FILE (same folder).
+      To start: serve over http://localhost or HTTPS so camera can open.
+    -->
+
+    <a-scene
+      mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.1; filterBeta: 10; warmupTolerance: 1; missTolerance: 2;"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      renderer="colorManagement: true"
+      color-space="sRGB">
+
+      <!-- Assets (use your two files; fallback sources per HTML spec) -->
+      <a-assets>
+        <video id="arVideo" preload="auto" loop playsinline webkit-playsinline muted crossorigin="anonymous">
+          <source src="./assets/video-alpha.webm" type="video/webm" />
+          <source src="./assets/video-alpha.mov" type="video/quicktime" />
+        </video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <!-- Target 0: show a plane textured by the video, width=1 (same as target width). Height is set dynamically from video ratio. -->
+      <a-entity id="target0" mindar-image-target="targetIndex: 0">
+        <a-plane id="videoPlane" material="src: #arVideo" width="1" height="0.562" position="0 0 0.01"></a-plane>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      // Official pattern: use DOM / events to control media playback on targetFound/targetLost (per docs 'Events Handling').
+      const target = document.querySelector('#target0');
+      const video = document.querySelector('#arVideo');
+      const plane = document.querySelector('#videoPlane');
+
+      // Auto-size plane height from the video's intrinsic aspect ratio so you don't need to type numbers.
+      // width is locked to 1 to match the target's width.
+      video.addEventListener('loadedmetadata', () => {
+        const w = video.videoWidth || 1;
+        const h = video.videoHeight || 1;
+        const aspect = h / w; // height/width
+        plane.setAttribute('height', String(aspect)); // with width=1, this preserves video aspect
+      });
+
+      // Play/pause with tracking events (scan to play; lost to pause).
+      target.addEventListener('targetFound', () => { try { video.play(); } catch(e){} });
+      target.addEventListener('targetLost',  () => { try { video.pause(); } catch(e){} });
+    </script>
+  </body>
+</html>
